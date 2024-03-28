@@ -17,8 +17,8 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   eval=TRUE,
-  echo = TRUE,
-  cache = FALSE,
+  echo = FALSE,
+  cache = TRUE,
   fig.width = 7, 
   fig.align = 'center',
   fig.asp = 0.618,
@@ -320,9 +320,7 @@ Your task here is to create 2 interactive visuals, using **plotly**, **leaflet**
 
 First you can source any necessary code, meaning run it. For example, let's use the Starbucks data we explored in week 11. In the example repository you downloaded into `"week12-lab"`, we have provided the code `process_starbucks_data.R` which goes through the first steps we carried out in the lab of downloading and processing the data. To source this code:
 
-```{r load-data, eval=FALSE}
-source("process_starbucks_data.R")
-```
+
 
 Recall that `echo=FALSE` means the code itself will not appear in the HTML output. You can also set this globally in `opts_chunk$set(echo=FALSE)` (see above for this lab)
 
@@ -335,9 +333,71 @@ Then you can add some code chunks to create the interactive visuals you want to 
 **Note**: Code chunks cannot have the same name, so if you do name them (like this one: `plot1`), you will need to be sure to give each an independent name.
 
 ```{r plot1, class.source="code-r-small"}
+set_map_details <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showlakes = TRUE,
+  lakecolor = toRGB('steelblue')
+)
 
+# Make sure both maps are on the same color scale
+shadeLimit <- 125
 
+# Create hover text
+sb_locs_state$hover <-
+  with(
+    sb_locs_state,
+    paste(
+      "Number of Starbucks: ",
+      n_stores,
+      '<br>',
+      "State: ",
+      state.y,
+      '<br>',
+      "Population: ",
+      population
+    )
+  )
+
+# Create the map
+map1 <- plot_geo(sb_locs_state, locationmode = "USA-states") %>%
+  add_trace(
+    z =  ~ n_stores,
+    text =  ~ hover,
+    locations =  ~ state,
+    color =  ~ n_stores,
+    colors = "Purples"
+  ) %>%
+  layout(title = "Starbucks stores by state", geo = set_map_details)
+
+map2 <- plot_geo(sb_locs_state, locationmode = "USA-states") %>%
+  add_trace(
+    z = ~ population,
+    locations = ~ state,
+    text = ~ hover,
+    color = ~ population,
+    colors = 'Reds'
+  ) %>%
+  colorbar(title = "Population") %>%
+  layout(title = "Population by State", geo = set_map_details)
+
+p1 <- subplot(map1, map2)
 ```
+
+```{r plot2, echo=FALSE}
+p2 <- sb_nutr %>%
+  unnest_tokens(word, Item, token = "words") %>%
+  filter(word %in% topwords$word) %>%
+  plot_ly(
+    x =  ~ Calories,
+    y =  ~ `Carb. (g)`,
+    z =  ~ `Protein (g)`,
+    type = "scatter3d",
+    mode = "markers",
+    color =  ~ word
+  )
+```
+
 
 <br>
 
@@ -354,13 +414,13 @@ Create tabs to display each figure. We do that using the following R Markdown la
 ### Figure 1
 
 `r ''````{r echo=FALSE}
-p1_scatter
+p1
 ```
 
 ### Figure 2
 
 `r ''````{r echo=FALSE}
-p2_scatter
+p2
 ```
 
 {-}
@@ -372,13 +432,13 @@ The output will look like this:
 ### Figure 1
 
 ```{r p1, echo=FALSE}
-
+p1
 ```
 
 ### Figure 2
 
 ```{r p2, echo=FALSE}
-
+p2
 ```
 
 ## {-}
